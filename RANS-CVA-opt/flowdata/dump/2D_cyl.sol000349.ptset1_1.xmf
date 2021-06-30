@@ -1,0 +1,80 @@
+<?xml version="1.0" ?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
+<Xdmf Version="2.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+ <Domain>
+   <Grid Name="ptset1_part1" GridType="Uniform">
+     <Topology TopologyType="Polyvertex" NodesPerElement="6518">
+     </Topology>
+     <Geometry GeometryType="XYZ">
+       <DataItem Dimensions="19554" NumberType="Float" Format="HDF">
+         2D_cyl.sol000349.ptset1_1.sol.h5:/Coordinates/XYZ
+       </DataItem>
+     </Geometry>
+     <Attribute Name="LOCATION" AttributeType="Scalar" Center="Node">
+       <DataItem Dimensions="6518" NumberType="Int" Format="HDF">
+         2D_cyl.sol000349.ptset1_1.sol.h5:/Coordinates/LOCATION
+       </DataItem>
+     </Attribute>
+     <Attribute Name="EL_GRP_LOCATION" AttributeType="Vector" Center="Node">
+       <DataItem Dimensions="6518 3" NumberType="Int" Format="HDF">
+         2D_cyl.sol000349.ptset1_1.sol.h5:/Coordinates/EL_GRP_LOCATION
+       </DataItem>
+     </Attribute>
+     <Attribute Name="PT_GRP_LOCATION" AttributeType="Vector" Center="Node">
+       <DataItem Dimensions="6518 3" NumberType="Int" Format="HDF">
+         2D_cyl.sol000349.ptset1_1.sol.h5:/Coordinates/PT_GRP_LOCATION
+       </DataItem>
+     </Attribute>
+     <Attribute Name="NITER" AttributeType="Scalar" Center="Grid">
+       <DataItem Format="XML" Dimensions="1">
+         8725
+       </DataItem>
+     </Attribute>
+     <Attribute Name="TOTAL_NITER" AttributeType="Scalar" Center="Grid">
+       <DataItem Format="XML" Dimensions="1">
+         28725
+       </DataItem>
+     </Attribute>
+     <Attribute Name="TIME" AttributeType="Scalar" Center="Grid">
+       <DataItem Format="XML" Dimensions="1">
+          8.7250000000007741E+001
+       </DataItem>
+     </Attribute>
+     <Attribute Name="TOTAL_TIME" AttributeType="Scalar" Center="Grid">
+       <DataItem Format="XML" Dimensions="1">
+          8.7250000000007741E+001
+       </DataItem>
+     </Attribute>
+     <Attribute Name="U" AttributeType="Vector" Center="Node">
+       <DataItem Dimensions="6518 3" NumberType="Float" Format="HDF">
+         2D_cyl.sol000349.ptset1_1.sol.h5:/Data/U
+       </DataItem>
+     </Attribute>
+     <Attribute Name="WEIGHT" AttributeType="Scalar" Center="Node">
+       <DataItem Dimensions="6518" NumberType="Float" Format="HDF">
+         2D_cyl.sol000349.ptset1_1.sol.h5:/Data/WEIGHT
+       </DataItem>
+     </Attribute>
+     <Attribute Name="RESIDENCE_TIME" AttributeType="Scalar" Center="Node">
+       <DataItem Dimensions="6518" NumberType="Float" Format="HDF">
+         2D_cyl.sol000349.ptset1_1.sol.h5:/Data/RESIDENCE_TIME
+       </DataItem>
+     </Attribute>
+     <Attribute Name="GLOBAL_INDEX" AttributeType="Scalar" Center="Node">
+       <DataItem Dimensions="6518" NumberType="Int" Format="HDF">
+         2D_cyl.sol000349.ptset1_1.sol.h5:/Data/GLOBAL_INDEX
+       </DataItem>
+     </Attribute>
+     <Attribute Name="INJECTOR" AttributeType="Scalar" Center="Node">
+       <DataItem Dimensions="6518" NumberType="Float" Format="HDF">
+         2D_cyl.sol000349.ptset1_1.sol.h5:/Data/INJECTOR
+       </DataItem>
+     </Attribute>
+     <Attribute Name="NSUBSTEPS" AttributeType="Scalar" Center="Node">
+       <DataItem Dimensions="6518" NumberType="Float" Format="HDF">
+         2D_cyl.sol000349.ptset1_1.sol.h5:/Data/NSUBSTEPS
+       </DataItem>
+     </Attribute>
+   </Grid>
+ </Domain>
+</Xdmf>
