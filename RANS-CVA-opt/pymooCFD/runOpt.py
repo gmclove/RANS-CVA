@@ -1,4 +1,6 @@
 # import numpy as np
+import os
+from pymooCFD.setupOpt import dataDir
 
 def runOpt(restart=True):
     if restart == True:
@@ -18,6 +20,10 @@ def runOpt(restart=True):
     else:
         # load algorithm initialize in setupOpt.py module
         from pymooCFD.setupOpt import algorithm
+        try:
+            os.remove(f'{dataDir}/obj.npy')
+        except OSError as err:
+            print(err)
         # try:
         #     checkpoint, = np.load("checkpoint.npy", allow_pickle=True).flatten()
         #     print("Loaded Checkpoint:", checkpoint)

@@ -7,10 +7,10 @@ import matplotlib.tri as tri
 # def main():
 #     xcfd, ycfd = loadMesh()
 #     u_mean, v_mean, u_rms, v_rms = loadStats()
-    
+
 
 def loadMesh():
-    unstrmesh = h5py.File('2D_cyl.sol000000_1.mesh.h5','r')
+    unstrmesh = h5py.File('dump/2D_cyl.sol000000_1.mesh.h5','r')
     coords = unstrmesh['Coordinates']
     xcfd = np.array(coords['XYZ'][:,0])
     ycfd = np.array(coords['XYZ'][:,1])
@@ -34,7 +34,7 @@ def loadStats():
     cfdpts = np.zeros((Ncfdpts,2),dtype='float64')
     cfdpts[:,0] = xcfd
     cfdpts[:,1] = ycfd
-    fields = h5py.File('2D_cyl.sol000400_1.sol.h5', 'r')
+    fields = h5py.File('dump/2D_cyl.sol000400_1.sol.h5', 'r')
     data = fields['Data']
     u_mean = np.array(data['U_MEAN'][:,0])
     # u_mean = np.append(u_mean,phiadded)
@@ -75,14 +75,14 @@ def visualize():
     plt.show()
 
 def loadParticles():
-    particles = h5py.File("2D_cyl.sol000400.ptset1_1.sol.h5",'r')
+    particles = h5py.File("dump/2D_cyl.sol000400.ptset1_1.sol.h5",'r')
     ptset = particles['Coordinates']['XYZ']
     # ptset[0,:]
     ptsetval = particles['Data']['INJECTOR']
     return ptset[:], ptsetval[:]
 
 # def loadVorticity():
-    
+
 
 xcfd, ycfd = loadMesh()
 u_mean, v_mean, u_rms, v_rms = loadStats()

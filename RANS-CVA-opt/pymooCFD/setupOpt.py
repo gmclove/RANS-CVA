@@ -12,7 +12,7 @@ procLim = 60  # Maximum processors to be used, defined in jobslurm.sh as well
 nProc = 12  # Number of processors for each individual (EQUAL or SMALLER than procLim)
 solverExec = '2D_cylinder'
 
-n_gen = 50
+n_gen = 1
 n_ind = 4
 #####################################
 ####### Define Design Space #########
@@ -125,6 +125,7 @@ class MyCallback(Callback):
         self.data['obj'] = []
 
     def notify(self, algorithm):
+        self.display_header = True
         for obj in range(n_obj):
             self.data["best_obj"+str(obj)].append(algorithm.pop.get('F')[:, obj].min())
         self.data['var'].append(algorithm.pop.get('X'))
@@ -153,7 +154,7 @@ termination = get_termination("n_gen", n_gen)
 ########################################################################################################################
 ######    PROBLEM    ######
 from pymoo.model.problem import Problem
-import time 
+import time
 
 class GA_CFD(Problem):
     def __init__(self):
@@ -165,7 +166,7 @@ class GA_CFD(Problem):
                          )
 
     def _evaluate(self, x, out, *args, **kwargs):
-        print(x)
+        # print(x)
         ###### Initialize Generation ######
         # gen = algorithm.n_gen. A thick orange line illustrates the pareto-optimal set. Through the combination of both constraints, the pareto-set is split into two parts. Analytically, the pareto-optimal set is given by PS={(x1,x2)|(0.1≤x1≤0.4)∨(0.6≤x1≤0.9)∧x2=0}
         # print(algorithm)
@@ -176,46 +177,58 @@ class GA_CFD(Problem):
         # algorithm = loadCP()
         # from pymooCFD.util.handleData import loadTxt
         # algorithm = loadTxt(archDir,sub)
-        
         try:
             gen = algorithm.n_gen - 1
         except TypeError:
-            gen = 0    
-        print(f'Evaluating generation {gen}')
+            gen = 0
         if gen is None:
             print('gen is None. exiting...')
             exit()
         genDir = f'gen{gen}'
         # subdir = 'ind'
         # print('GEN:%i' % gen)
+        print(f'Evaluating generation {gen}')
 
+        # add indices column to track individuals after parallel computing
+        # x = np.array([[1,2],[3,5],[5,6]])
+        # indices = [*range(len(x))]
+        # x = np.insert(x, 0, indices, axis=1) # col. 0 = index
+        indices = [[i] for i in range(len(x))]
+        x = np.append(x, indices, axis=1)
+        # print(x)
         ###### RUN GENERATION ######
-
         import multiprocessing
-        from rans_cva_sim_v2 import runSim
+        from rans_cva_sim_v2 import run
         starttime = time.time()
         pool = multiprocessing.Pool()
-        pool.map(runSim, x)
+        pool.map(run, x)
         pool.close()
         print()
-        print('Time taken = {} seconds'.format(time.time() - starttime))
-    
-        for ind, var in enumerate(x):
-            tracers = np.load(f'tracers_cva-{var[0]}-{var[1]}.npy')
-            eddies = np.load(f'eddies_cva-{var[0]}-{var[1]}.npy')
-            
-        
+        print('Simulation Time: {} seconds'.format(time.time() - starttime))
+
+        # for ind, var in enumerate(x):
+        #     tracers = np.load(f'tracers_cva-{var[0]}-{var[1]}.npy')
+        #     eddies = np.load(f'eddies_cva-{var[0]}-{var[1]}.npy')
+
+
         # from pymooCFD.setupCFD import postProc
         # obj = np.ones((n_ind, n_obj))
         # for ind in range(len(x)):
         #     indDir = f'{genDir}/{subdir}{ind}'
         #     obj[ind] = postProc(indDir, x[ind, :])
         # create sim object for this generation and it's population
+        obj = np.zeros((len(x), n_obj))
+        for ent in os.listdir(dataDir):
+            path = f'{dataDir}/{ent}'
+            if os.path.isdir(path):
+                i = int(path.split()[0][-1])
+                obj[i] = np.load(f'{path}/obj.npy')
+
         out['F'] = obj
 
         # archive generation folder to prevent
-        from pymooCFD.util.handleData import removeDir # archive
-        removeDir(genDir)
+        # from pymooCFD.util.handleData import removeDir # archive
+        # removeDir(genDir)
         # archive(genDir, archDir, background=True)
 
         print(f'GENERATION {gen} COMPLETE')

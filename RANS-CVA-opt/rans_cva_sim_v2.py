@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 from pymooCFD.setupOpt import dataDir
 # from IPython.display import display, clear_output
@@ -13,24 +14,54 @@ dx, dy, ijlpts, lpts, ptset, ptsetval = np.load('./flowdata/dnsData.npy', allow_
 
 i_x = 0; i_y = 1; i_u = 2; i_v = 3; i_G = 4; i_s = 5; i_t = 6; i_count = 7; i_D = 8; i_inj=4
 
-xmin = -10
-xmax = 50
+xmin = -10.
+xmax = 50.
+ymin = -15.
+ymax = 15.
+
+def run(var):
+    global caseDir, indDir
+    indDir = f'ind{var[-1]}'
+    caseDir = f'{dataDir}/{indDir}'
+    print(f'### running {caseDir}')
+    try:
+        os.mkdir(caseDir)
+    except OSError as err:
+        print(err)
+    # global caseDir
+    # caseDir = path
+    # if os.path.exists(f'{caseDir}/tracers_all-{var[0]}-{var[1]}'):
+    try:
+        tracers = np.load(f'{caseDir}/tracers_all-{var[0]}-{var[1]}.npy', allow_pickle=True)
+        print(f'{indDir} simulation already complete')
+    except FileNotFoundError as err:
+        print(err)
+        runSim(var)
+        tracers = np.load(f'{caseDir}/tracers_all-{var[0]}-{var[1]}')
+    obj = postProc(tracers)
+    saveObj(obj)
+
+def saveObj(obj):
+    try:
+        prev_obj = np.load(f'{caseDir}/obj.npy')
+        new_obj = prev_obj + obj
+        np.save(f'{caseDir}/obj.npy', new_obj)
+    except FileNotFoundError as err:
+        print(err)
+        print(f'### creating {caseDir}/obj.npy file')
+        np.save(f'{caseDir}/obj.npy', obj)
 
 
 
 def runSim(var):
-    gamma_max = var[0]
+    gamma = var[0]
     sigma = var[1]
 
     dims = 2
     trdims = 5
     eddims = 9
-    
+
     dt = 0.1
-    xmin = -10.
-    xmax = 50.
-    ymin = -15.
-    ymax = 15.
     ymin_inj1 = -1.0
     ymax_inj1 = -0.1
     ymin_inj2 = 0.1
@@ -51,23 +82,25 @@ def runSim(var):
     tracers_inj2[:,i_inj] = 0.0
     T_tracer_inj = 0.2
     it_inj = int(T_tracer_inj / dt)
-    T_eddies = 3.
+    T_eddies = 1/0.18527791687531295  #3.
     it_eddy_inj = int(T_eddies / dt)
     x_eddy_inj = 1.0
     y_eddy_inj = 0.25
-    # Drag = 1.0
-    Gamma_max = gamma_max #1.0
-    # c_growth = 2.0
-    t_G_max = 4.0
-    c_decay = 0.001
     sigma_inj = sigma #0.05
-    def Gfunc(t):
-        #global c_growth,c_decay #,Gamma_max
-        if t <= t_G_max:
-            G = Gamma_max*t/t_G_max
-        else:
-            G = np.max([Gamma_max*(1-c_decay*(t-t_G_max)),0.])
-        return G
+    # Drag = 1.0
+
+    # Gamma_max = 1.0
+    # # c_growth = 2.0
+    # t_G_max = 4.0
+    # c_decay = 0.001
+    # def Gfunc(t):
+    #     #global c_growth,c_decay #,Gamma_max
+    #     if t <= t_G_max:
+    #         G = Gamma_max*t/t_G_max
+    #     else:
+    #         G = np.max([Gamma_max*(1-c_decay*(t-t_G_max)),0.])
+    #     return G
+
     eddy_inj = np.zeros((1,eddims),dtype='float64')
     eddy_inj[0,i_x] = x_eddy_inj
     eddy_inj[0,i_y] = y_eddy_inj
@@ -78,10 +111,12 @@ def runSim(var):
     eddy_inj[0,i_t] = 0.0
     Tsimu = 100.
     Nt = int(Tsimu / dt)
-    
+
     i = 0
     # iphase = 0
     ie_count = 0
+    tracers_all = [] #np.dtype(object)#np.array(0, dtype=object) #[] # tracers at every iteration
+    eddies_all = []
     while i < Nt:
         if (i == 0):
             tracers = np.copy(tracers_inj1)
@@ -186,37 +221,138 @@ def runSim(var):
         Neddies = np.shape(eddies)[0]
         eddies[:,i_t] += dt
         for ie in range(Neddies):
-            eddies[ie,i_G] = (-1.0)**(eddies[ie,i_count]+1)*Gfunc(eddies[ie,i_t])
-        i += 1\
-        
+            eddies[ie,i_G] = (-1.0)**(eddies[ie,i_count]+1)*gamma #*Gfunc(eddies[ie,i_t])
+        i += 1
+
+        # store tracer info
+        # tracers_all = np.append(tracers_all, tracers)
+        tracers_all.append(tracers)
+        # print(tracers.shape)
+        # print(tracers)
+        # print(tracers_all.shape)
+        # print(len(tracers_all), len(tracers_all[0]), len(tracers_all[0][0]))
+        # print(tracers_all)
+
+        eddies_all.append(eddies)
+
     #     print(i)
         # if (i % it_inj) == 0:
         #     print(Nt,i,Ntracers,Neddies)
             # clear_output(wait=True)
-            
-    tracers_cva = np.copy(tracers)
-    np.save(f'{dataDir}/tracers_cva-{gamma_max}-{sigma}', tracers)
-    np.save(f'{dataDir}/eddies_cva-{gamma_max}-{sigma}', tracers)
-    
-    tracers = tracers_cva
+
+    # SIMULATION COMPLETE
+    np.save(f'{caseDir}/tracers_all-{var[0]}-{var[1]}', tracers_all)
+    # np.save(f'{caseDir}/tracers_cva-{var[0]}-{var[1]}', tracers)
+    # np.save(f'{caseDir}/eddies_cva-{var[0]}-{var[1]}', eddies)
+
     eddies = eddies
-    plot(gamma_max, sigma, tracers, eddies)
-    
-    
+    plot(gamma, sigma, tracers, eddies)
+
+def postProc(tracers_all):
+    ############################################################################
+    ###### POST-PROCESS ######
+    # create bins to measure distribution of tracer particles across the domain
+    binsize = 0.5
+    Lx = xmax - xmin
+    Ly = ymax - ymin
+    nxbins = int(Lx/binsize)
+    nybins = int(Ly/binsize)
+    xsbins = np.linspace(xmin,xmax,nxbins+1)
+    ysbins = np.linspace(ymin,ymax,nybins+1)
+    xbins = (xsbins[1:] + xsbins[:-1])/2.
+    ybins = (ysbins[1:] + ysbins[:-1])/2.
+    Xbins,Ybins = np.meshgrid(ybins,xbins)
+    # print(Xbins.shape)
+    i_inj1 = 0; i_inj2 = 1; ninj = 2
+    meanC = np.zeros((nxbins,nybins,2),dtype='float64')
+
+    isamplestart = 1 - 1
+    Nsamples = len(tracers_all)
+
+    for it in range(isamplestart,Nsamples):
+        # filename = "dump/2D_cyl.sol"+str(ifile).zfill(6)+".ptset1_1.sol.h5"
+        # # print(filename)
+        # particles = h5py.File(filename,'r')
+        # ptset = np.array(particles['Coordinates']['XYZ'])
+        # ptsetval = np.array(particles['Data']['INJECTOR'])
+        # particles.close()
+        # for n in range(len(ptsetval)):
+            # i = int((ptset[n,0] - xmin)/binsize)
+            # j = int((ptset[n,1] - ymin)/binsize)
+            # if ptsetval[n] == 1:
+            #     iinj = i_inj1
+            # elif ptsetval[n] == 2:
+            #     iinj = i_inj2
+            # else:
+            #     print("problem")
+            # meanC[i,j,iinj] += 1
+        # plot(gamma, sigma, tracers_all[it], eddies_all[it])
+
+        tracers = tracers_all[it]
+        # print(tracers.shape[0])
+
+        I = ((tracers[:,i_x] - xmin)/binsize).astype(int)
+        J = ((tracers[:,i_y] - ymin)/binsize).astype(int)
+        mask = np.where(I > nxbins-1)
+        I[mask] = nxbins-1
+        Iinj = (tracers[:,i_inj] - 1.).astype(int)
+        meanC[I,J,Iinj] += 1./tracers.shape[0]
+    meanC /= Nsamples
+    meanC_cva = meanC
+    np.save(f'{caseDir}/meanC-cva', meanC)
+    # print(meanC.shape)
+    # return meanC
+    # np.save(f'{caseDir}/meanC-cva', meanC)
+
+    # print(meanC[20,:,i_inj1].shape)
+    # meanC[20,:,i_inj2]
+    # meanC[30,:,i_inj1]
+    # meanC[30,:,i_inj2]
+    meanC_dns = np.load('flowdata/meanC-dns.npy')
+    obj = []
+    for i, x in enumerate([10, 30]):
+        meanDif1 = np.mean(np.abs(meanC_cva[x,:,i_inj1]-meanC_dns[x,:,i_inj1]))
+        meanDif2 = np.mean(np.abs(meanC_cva[x,:,i_inj2]-meanC_dns[x,:,i_inj2]))
+        # print(meanDif1, meanDif2)
+        meanDif = np.mean([meanDif1, meanDif2])
+        obj.append(meanDif)
+    print(f'{caseDir} objectives: {obj}')
+    return obj
+
+def plotBins():
+    fig, ax = plt.subplots(nrows=2, ncols=1, constrained_layout=True,dpi=150)
+    for iinj in range(ninj):
+        ax[iinj].contourf(Ybins,Xbins,meanC[:,:,iinj])
+        ax[iinj].set_aspect('equal')
+    plt.savefig(f'{caseDir}/meanC-cva_contour.png')
+    plt.show()
+
+    fig, ax = plt.subplots(nrows=1, ncols=1, constrained_layout=True,dpi=150)
+    ax.plot(ybins,meanC[20,:,i_inj1],'k-', label='x=20')
+    ax.plot(ybins,meanC[20,:,i_inj2],'k--', label='x=20')
+    ax.plot(ybins,meanC[30,:,i_inj1],'C0-', label='x=30')
+    ax.plot(ybins,meanC[30,:,i_inj2],'C0--', label='x=30')
+    ax.plot(ybins,meanC[40,:,i_inj1],'C1-', label='x=40')
+    ax.plot(ybins,meanC[40,:,i_inj2],'C1--', label='x=40')
+    ax.legend()
+    ax.set_xlim(-6,6)
+    plt.savefig(f'{caseDir}/meanC-cva.png')
+    plt.show()
+
 def plot(gamma_max, sigma, tracers, eddies):
     # tracers = np.load(f'tracers_cva-{self.gamma_max}-{self.sigma}.npy')
     # eddies = np.load(f'eddies_cva-{self.gamma_max}-{self.sigma}.npy')
-    
+
     Nr = 2
     fig, ax = plt.subplots(nrows=Nr, ncols=1, constrained_layout=True,dpi=150)
-    
+
     x = ptset[::2,0]
     y = ptset[::2,1]
     c = ptsetval[::2]
     ax[0].scatter(x, y, c=c, s=0.05,cmap='bwr')
     ax[0].set_title('DNS')
 
-    
+
     x = tracers[:,i_x]
     y = tracers[:,i_y]
     c = tracers[:,i_inj]
@@ -227,20 +363,21 @@ def plot(gamma_max, sigma, tracers, eddies):
     y = eddies[:,i_y]
     c = eddies[:,i_G]
     # ax[1].scatter(x,y, c=c, s=20, marker = "o",cmap='RdBu_r',vmin=-0.9*Gamma_max,vmax=0.9*Gamma_max)
-    
-    
+
+
     # x = tracers_rans[:,i_x]
     # y = tracers_rans[:,i_y]
     # c = tracers_rans[:,i_inj]
     # ax[2].scatter(x, y, c=c, s=0.05,cmap='bwr',vmin=0,vmax=1)
     # ax[2].set_title('RANS')
-    
-    
+
+
     for ir in range(Nr):
         ax[ir].set_aspect('equal')
         ax[ir].set_xlim(xmin,xmax)
         ax[ir].set_ylim(-5,5)
-    
+
     # plt.show()
-    plt.savefig(f'{dataDir}/plt-{gamma_max}-{sigma}.png')
-                    
+    plt.savefig(f'{caseDir}/plt-{gamma_max}-{sigma}.png')
+
+# run([1, 0.05])

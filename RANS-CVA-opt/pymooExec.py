@@ -5,7 +5,7 @@
 #gen0Map()
 class PtsList(object):
     pass
-        
+
 from pymooCFD.runOpt import runOpt
 runOpt(restart=False)
 
