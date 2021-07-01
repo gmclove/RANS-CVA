@@ -14,5 +14,7 @@ runOpt(restart=False)
 
 # from pymooCFD.util.handleData import compressDir
 # compressDir('/dump')
-
-# import base_case.rans_cva_sim
+#
+# from pymooCFD.util.handleData import loadCP
+# alg = loadCP()
+# alg.display.do(alg.problem, alg.evaluator, alg)

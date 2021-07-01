@@ -12,8 +12,8 @@ procLim = 60  # Maximum processors to be used, defined in jobslurm.sh as well
 nProc = 12  # Number of processors for each individual (EQUAL or SMALLER than procLim)
 solverExec = '2D_cylinder'
 
-n_gen = 1
-n_ind = 4
+n_gen = 2
+n_ind = 2
 #####################################
 ####### Define Design Space #########
 #####################################
@@ -118,7 +118,7 @@ from pymoo.model.callback import Callback
 class MyCallback(Callback):
     def __init__(self) -> None:
         super().__init__()
-        # self.gen = algorithm.n_gen
+        self.gen = 0
         for obj in range(n_obj):
             self.data["best_obj"+str(obj)] = []
         self.data['var'] = []
@@ -177,17 +177,18 @@ class GA_CFD(Problem):
         # algorithm = loadCP()
         # from pymooCFD.util.handleData import loadTxt
         # algorithm = loadTxt(archDir,sub)
-        try:
-            gen = algorithm.n_gen - 1
-        except TypeError:
-            gen = 0
-        if gen is None:
-            print('gen is None. exiting...')
-            exit()
-        genDir = f'gen{gen}'
+
+        # try:
+        #     gen = algorithm.n_gen - 1
+        # except TypeError:
+        #     gen = 0
+        # if gen is None:
+        #     print('gen is None. exiting...')
+        #     exit()
+        # genDir = f'gen{gen}'
         # subdir = 'ind'
         # print('GEN:%i' % gen)
-        print(f'Evaluating generation {gen}')
+        # print(f'Evaluating generation {gen}')
 
         # add indices column to track individuals after parallel computing
         # x = np.array([[1,2],[3,5],[5,6]])
@@ -222,7 +223,7 @@ class GA_CFD(Problem):
             path = f'{dataDir}/{ent}'
             if os.path.isdir(path):
                 i = int(path.split()[0][-1])
-                obj[i] = np.load(f'{path}/obj.npy')
+                obj[i] = np.load(f'{path}/obj.npy', allow_pickle=True)
 
         out['F'] = obj
 
@@ -231,7 +232,8 @@ class GA_CFD(Problem):
         # removeDir(genDir)
         # archive(genDir, archDir, background=True)
 
-        print(f'GENERATION {gen} COMPLETE')
+        # print(f'GENERATION {gen} COMPLETE')
+        print('GENERATION COMPLETE')
 
 problem = GA_CFD()
 

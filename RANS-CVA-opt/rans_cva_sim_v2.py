@@ -36,8 +36,12 @@ def run(var):
         print(f'{indDir} simulation already complete')
     except FileNotFoundError as err:
         print(err)
-        runSim(var)
-        tracers = np.load(f'{caseDir}/tracers_all-{var[0]}-{var[1]}')
+        tracers = runSim(var)
+        try:
+            tracers = np.load(f'{caseDir}/tracers_all-{var[0]}-{var[1]}.npy', allow_pickle=True)
+        except FileNotFoundError as err:
+            raise err
+
     obj = postProc(tracers)
     saveObj(obj)
 
@@ -245,8 +249,8 @@ def runSim(var):
     # np.save(f'{caseDir}/tracers_cva-{var[0]}-{var[1]}', tracers)
     # np.save(f'{caseDir}/eddies_cva-{var[0]}-{var[1]}', eddies)
 
-    eddies = eddies
     plot(gamma, sigma, tracers, eddies)
+    return tracers
 
 def postProc(tracers_all):
     ############################################################################
@@ -287,15 +291,23 @@ def postProc(tracers_all):
             #     print("problem")
             # meanC[i,j,iinj] += 1
         # plot(gamma, sigma, tracers_all[it], eddies_all[it])
-
         tracers = tracers_all[it]
+        # print(tracers_all)
+        # tracers = np.array(tracers_all[it])
+        # print(tracers.type)
+        # print(tracers.shape)
+        # print(tracers[:,i_x].shape)
+        # print(tracers[:][i_x].shape)
         # print(tracers.shape[0])
 
+        # I = ((tracers[:][i_x] - xmin)/binsize).astype(int)
+        # J = ((tracers[:][i_y] - ymin)/binsize).astype(int)
         I = ((tracers[:,i_x] - xmin)/binsize).astype(int)
         J = ((tracers[:,i_y] - ymin)/binsize).astype(int)
         mask = np.where(I > nxbins-1)
         I[mask] = nxbins-1
-        Iinj = (tracers[:,i_inj] - 1.).astype(int)
+        # Iinj = (tracers[:][i_inj] - 1.).astype(int)
+        Iinj = (tracers[:, i_inj] - 1.).astype(int)
         meanC[I,J,Iinj] += 1./tracers.shape[0]
     meanC /= Nsamples
     meanC_cva = meanC
